@@ -76,13 +76,13 @@
             android:layout_marginEnd="162dp"
             android:layout_marginBottom="56dp"
             android:text="Send"
-            app:layout_constraintBottom_toTopOf="@+id/sendConfig"
+            app:layout_constraintBottom_toTopOf="@+id/configText"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
-            android:id="@+id/sendConfig"
+            android:id="@+id/configText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="173dp"

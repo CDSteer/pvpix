@@ -12,14 +12,20 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +38,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -74,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
     BluetoothGattCharacteristic m_characteristicTX;
     List<BluetoothGattService> m_gattServices;
     BluetoothGattCharacteristic m_characteristicRead;
+
+    BluetoothConect mService;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -150,7 +159,70 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Intent bleService = new Intent(this, BluetoothConect.class);
+        startService(bleService);
+        bindService(bleService, connection, Context.BIND_AUTO_CREATE);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mMessageReceiver, new IntentFilter("BLEConnection"));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mDataReceiver, new IntentFilter("BLENewData"));
+
     }
+
+
+
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            String message = intent.getStringExtra("Status");
+            TextView t= findViewById(R.id.configText);
+            t.setText(message);
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    private BroadcastReceiver mDataReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            String message = intent.getStringExtra("TXData");
+            String[] pvPixConfig = splitString(message);
+            if (pvPixConfig.length == 2) {
+                Toast.makeText(context, (pvPixConfig[0]+pvPixConfig[1]), Toast.LENGTH_SHORT).show();
+                setPvPixConfig(pvPixConfig);
+            }
+
+        }
+    };
+
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            BluetoothConect.LocalBinder binder = (BluetoothConect.LocalBinder) service;
+            mService = binder.getService();
+            Log.v("cdsteer", String.valueOf(mService.getRandomNumber()));
+//            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+//            mBound = false;
+        }
+    };
+
+    public void onDestroy() {
+        super.onDestroy();
+        unbindService(connection);
+    }
+
 
     // Device scan callback.
     private ScanCallback leScanCallback =
@@ -445,7 +517,7 @@ public class MainActivity extends AppCompatActivity {
 
     private View.OnClickListener sendClickListener = v -> {
         if (v.getId() == R.id.send){
-            TextView t=(TextView)findViewById(R.id.sendConfig);
+            TextView t=(TextView)findViewById(R.id.configText);
             try {
                 getNewPVMessages();
             } catch (IOException e) {

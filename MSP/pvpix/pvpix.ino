@@ -64,7 +64,7 @@ void setup()
   Serial1.println("I'M ALIVE!");
   delay(100);
   digitalWrite(P8_1, LOW); //Remove power to BLE
-  //digitalWrite(P8_1, HIGH); //Power to BLE
+//  digitalWrite(P8_1, HIGH); //Power to BLE
   delay(100);
   digitalWrite(P4_3, HIGH); //Power to SERVO_0
   delay(100);
@@ -101,7 +101,12 @@ void loop() {
 
    Serial1.begin(9600);  
 
+   digitalWrite(P8_1, HIGH); //Power to BLE
+   delay(700);
+   Serial1.println("0:0");
+
    delay(100);
+   
 
    if(sw0 == 1){
       digitalWrite(P4_3, HIGH); //Power to SERVO_0
@@ -208,7 +213,8 @@ void loop() {
   myservo2.detach();
   myservo3.detach();
      
-  digitalWrite(P8_1, HIGH); //Remove power to BLE
+  digitalWrite(P8_1, LOW); //Remove power to BLE
+
  
   pinMode(P2_5, OUTPUT); //Servo PWM pin to output
   pinMode(P2_4, OUTPUT); //Servo PWM pin to output
@@ -226,7 +232,7 @@ void loop() {
 
   delay(30);
  
-  suspend();
+//  suspend();
 
 }
 
