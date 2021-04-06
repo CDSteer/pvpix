@@ -60,28 +60,14 @@ public class MainActivity extends AppCompatActivity {
     private String BASE_URL_GET = "https://pvpix.herokuapp.com/";
     private String BASE_URL_POST = "https://pvpix.herokuapp.com/post";
 
-    BluetoothManager bluetoothManager;
     BluetoothAdapter bluetoothAdapter;
-    boolean scanning;
-    Handler handler;
-
-    private BluetoothGatt mGatt;
-
-    private static final int REQUEST_ENABLE_BT = 1;
-    // Stops scanning after 10 seconds.
-    private static final long SCAN_PERIOD = 10000;
-    private BluetoothLeScanner bluetoothLeScanner;
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
 
     private Context context = this;
-    private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
 
     BluetoothGattCharacteristic m_characteristicTX;
-    List<BluetoothGattService> m_gattServices;
-    BluetoothGattCharacteristic m_characteristicRead;
-
     BluetoothConect mService;
 
 
@@ -97,11 +83,7 @@ public class MainActivity extends AppCompatActivity {
         this.registerButtons();
         findViewById(R.id.send).setOnClickListener(sendClickListener);
 
-        bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = bluetoothManager.getAdapter();
-        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
 
-        handler = new Handler();
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
@@ -121,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         } else {
-            bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+//            bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         }
 
         // Make sure we have access coarse location enabled, if not, prompt the user to enable it
@@ -165,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
         bindService(bleService, connection, Context.BIND_AUTO_CREATE);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, new IntentFilter("BLEConnection"));
+                mStatusReceiver, new IntentFilter("BLEConnection"));
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mDataReceiver, new IntentFilter("BLENewData"));
@@ -174,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+    private BroadcastReceiver mStatusReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
@@ -192,7 +174,6 @@ public class MainActivity extends AppCompatActivity {
             String message = intent.getStringExtra("TXData");
             String[] pvPixConfig = splitString(message);
             if (pvPixConfig.length == 2) {
-                Toast.makeText(context, (pvPixConfig[0]+pvPixConfig[1]), Toast.LENGTH_SHORT).show();
                 setPvPixConfig(pvPixConfig);
             }
 
@@ -223,120 +204,6 @@ public class MainActivity extends AppCompatActivity {
         unbindService(connection);
     }
 
-
-    // Device scan callback.
-    private ScanCallback leScanCallback =
-        new ScanCallback() {
-            @Override
-            public void onScanResult(int callbackType, ScanResult result) {
-                super.onScanResult(callbackType, result);
-                if (result.getDevice().getAddress().equals(DEVICE_ADDRESS)){
-                    Log.v("cdsteer", ("scan: "+ result.getDevice().getAddress()));
-                    Log.v("cdsteer", "Found it!");
-                    mGatt = result.getDevice().connectGatt(context, false, bCallback);
-                }
-            }
-            @Override
-            public void onBatchScanResults(List<ScanResult> results) {
-                super.onBatchScanResults(results);
-                Log.v("cdsteer", ("onBatchScanResults"));
-
-            }
-            @Override
-            public void onScanFailed(int errorCode) {
-                super.onScanFailed(errorCode);
-                Log.e("cdsteer", "scan failed");
-            }
-        };
-
-    /**
-     * Callback to find services of device.
-     */
-    private final BluetoothGattCallback bCallback = new BluetoothGattCallback() {
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt,
-                                            BluetoothGattCharacteristic characteristic) {
-            byte[] rawData = characteristic.getValue();
-            String txData = new String(rawData).trim(); // toString does not work, but new String()
-            Log.i("cdsteer", "MSP Data = " + txData);
-            String[] pvPixConfig = splitString(txData);
-            if (pvPixConfig.length == 2) {
-                setPvPixConfig(pvPixConfig);
-            }
-        }
-
-        //!Function to discover services
-        @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-
-            gatt.discoverServices();
-            switch (newState) {
-                case BluetoothProfile.STATE_CONNECTED:
-                    Log.v("cdsteer", String.valueOf("STATE_CONNECTED"));
-                    try {
-                        getNewPVMessages();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                case BluetoothProfile.STATE_DISCONNECTED:
-                    Log.v("cdsteer", String.valueOf("STATE_DISCONNECTED"));
-                    try {
-                        postPVMessage();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                default:
-                    Log.v("cdsteer", String.valueOf(newState));
-            }
-        }
-
-        //!Function to deal with discovered services
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if (status == gatt.GATT_SUCCESS) {
-                m_gattServices = mGatt.getServices();
-                m_characteristicTX = findCharacteristic(SaticResources.HM10_SERIAL_DATA, m_gattServices);
-                m_characteristicRead = findCharacteristic(SaticResources.HM10_CONFIG, m_gattServices);
-                String foundSuccess = SaticResources.SERVICES_DISCOVERY_CHARACTERISTIC_FAILURE;
-                if (m_characteristicTX != null) {
-                    foundSuccess = SaticResources.SERVICES_DISCOVERY_CHARACTERISTIC_SUCCESS;
-                    try {
-                        getNewPVMessages();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Log.v("cdsteer", "connected");
-                }
-            } else {
-                // Many reasons it could fail to find services
-                Toast.makeText(context, "onServicesDiscovered:Else", Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        //!Function to deal with characteristic writes
-        @Override
-        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.v("cdsteer","onCharacteristicWrite");
-            if (status == BluetoothGatt.GATT_SUCCESS){
-                Log.v("cdsteer","Write to Characteristic Success!");
-            } else {
-                Log.v("cdsteer","Blast!Foiled!");
-            }
-        }
-
-        @Override
-        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.v("cdsteer", "Read Characteristic Success!");
-//                Log.d("cdsteer", ("Data Read: " + characteristic.getStringValue(0)));
-                byte[] rawData = characteristic.getValue();
-                String txData = new String(rawData).trim(); // toString does not work, but new String()
-                Log.i("cdsteer",
-                        "TxData = " + txData);
-            }
-        }
-    };
-
     private void setPvPixConfig(String[] pvPixConfig) {
         switch (Integer.parseInt(pvPixConfig[0])){
             case 0: setButtonState(findViewById(R.id.one), pvPixConfig[1]);
@@ -358,72 +225,13 @@ public class MainActivity extends AppCompatActivity {
 //        }
     }
 
-    public void scanLeDevice() {
-        if(bluetoothLeScanner != null) {
-            if (!scanning) {
-                // Stops scanning after a pre-defined scan period.
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        scanning = false;
-                        bluetoothLeScanner.stopScan(leScanCallback);
-                        Log.v("cdsteer","stopScan..");
-                    }
-                }, SCAN_PERIOD);
-                scanning = true;
-                bluetoothLeScanner.startScan(leScanCallback);
-                Log.v("cdsteer","startScan..");
-            } else {
-                scanning = false;
-                bluetoothLeScanner.stopScan(leScanCallback);
-                Log.v("cdsteer","stopScan2..");
-            }
-        }
-    }
-
-    private BluetoothGattCharacteristic findCharacteristic(String uuidString, List<BluetoothGattService> possibleServices) {
-        final UUID desiredUuid = UUID.fromString(uuidString);
-        for (BluetoothGattService gattService : possibleServices) {
-            BluetoothGattCharacteristic desiredCharacteristic = gattService.getCharacteristic(
-                    desiredUuid);
-            if(desiredCharacteristic !=null) {
-                return desiredCharacteristic;
-            }
-        }
-        return null;
-    }
-
-    public void enableReadNotifications(BluetoothGattCharacteristic characteristic) {
-        mGatt.setCharacteristicNotification(characteristic, true);
-        // Enable the local machine to watch changes to this characteristic
-        // Then, change the peripheral to notify observers of changes in its payload.
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
-                UUID.fromString(SaticResources.CLIENT_CHARACTERISTIC_CONFIGURATION_DESCRIPTOR));
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        mGatt.writeDescriptor(descriptor);
-    }
-
-    public boolean readVal(){
-        if(m_characteristicTX != null) {
-            mGatt.setCharacteristicNotification(m_characteristicTX, true);
-            mGatt.readCharacteristic(m_characteristicTX);
-        } else {
-            Toast.makeText(this.context, "Tried to read without having connection", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        return true;
-    }
 
     //Function for writing to Arduino
-    public boolean writeVal(String text){
-        if(m_characteristicTX != null) {
-            final byte[] tx = text.getBytes();
-            m_characteristicTX.setValue(tx);
-            mGatt.writeCharacteristic(m_characteristicTX);
-            enableReadNotifications(m_characteristicTX);
+    private boolean writeVal(String text){
+        if(mService.m_characteristicTX != null) {
+            mService.writeVal(text);
         } else {
             String[] titles = splitString(text);
-            Button btn;
             for (int i=0; i<titles.length-1; i++) {
                 switch (i) {
                     case 0: setButtonState(findViewById(R.id.one),titles[i]);
@@ -473,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            scanLeDevice();
+//            scanLeDevice();
             return true;
         }
         if (id == R.id.write_value) {

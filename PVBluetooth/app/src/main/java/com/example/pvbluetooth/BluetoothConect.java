@@ -104,7 +104,6 @@ public class BluetoothConect extends Service {
             byte[] rawData = characteristic.getValue();
             String txData = new String(rawData).trim(); // toString does not work, but new String()
             Log.i("cdsteer", "MSP Data = " + txData);
-            // TODO: need send
             intent = new Intent("BLENewData");
             intent.putExtra("TXData", txData);
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
@@ -290,7 +289,6 @@ public class BluetoothConect extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         // A client is binding to the service with bindService()
-        Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_SHORT).show();
         return binder;
     }
 
@@ -307,6 +305,7 @@ public class BluetoothConect extends Service {
 
     @Override
     public void onDestroy() {
+        //todo link this to a button so the users can stop the BLE if their phone is dieing
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
     }
 
