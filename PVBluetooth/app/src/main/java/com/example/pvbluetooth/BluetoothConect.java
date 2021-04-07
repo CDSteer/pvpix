@@ -60,7 +60,11 @@ public class BluetoothConect extends Service {
     List<BluetoothGattService> m_gattServices;
     BluetoothGattCharacteristic m_characteristicRead;
 
-    boolean mPVConnected = false;
+    public boolean ismPVConnected() {
+        return mPVConnected;
+    }
+
+    private boolean mPVConnected = false;
 
     // Random number generator
     private final IBinder binder = new LocalBinder();

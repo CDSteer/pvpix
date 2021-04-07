@@ -136,11 +136,7 @@ public class MainActivity extends AppCompatActivity {
             builder.show();
         }
 
-        try {
-            getNewPVMessages();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
 
         Intent bleService = new Intent(this, BluetoothConect.class);
         startService(bleService);
@@ -151,6 +147,8 @@ public class MainActivity extends AppCompatActivity {
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mDataReceiver, new IntentFilter("BLENewData"));
+
+
 
     }
 
@@ -164,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
             TextView t= findViewById(R.id.configText);
             t.setText(message);
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+            checkForPVMessages();
         }
     };
 
@@ -182,7 +181,6 @@ public class MainActivity extends AppCompatActivity {
 
     /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection connection = new ServiceConnection() {
-
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
@@ -191,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
             mService = binder.getService();
 //            mBound = true;
         }
-
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
 //            mBound = false;
@@ -216,15 +213,13 @@ public class MainActivity extends AppCompatActivity {
             default:
                 break;
         }
-
-//        try {
-//           postPVMessage();
-//        } catch (IOException e) {
-//           e.printStackTrace();
-//        }
+        try {
+            postPVMessage();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
-
+    
     //Function for writing to Arduino
     private boolean writeVal(String text){
         if(mService.m_characteristicTX != null) {
@@ -431,16 +426,35 @@ public class MainActivity extends AppCompatActivity {
         editor.commit();
     }
 
-
     private long recover(){
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         long test = settings.getLong("test", getTimestamp());
-        Log.v("cdsteer", String.valueOf(test));
+//        Log.v("cdsteer", String.valueOf(test));
         return test;
     }
 
     private long getTimestamp(){
         return System.currentTimeMillis()/1000;
+    }
+
+    // background thread that wakes up to check for device after a disconnecting
+    private void checkForPVMessages(){
+        new Thread(() -> {
+            while (true) {
+                while (mService.ismPVConnected()) {
+                    try {
+                        getNewPVMessages();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
     }
 
 }
