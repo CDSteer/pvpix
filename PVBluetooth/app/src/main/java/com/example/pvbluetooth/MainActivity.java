@@ -189,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothConect.LocalBinder binder = (BluetoothConect.LocalBinder) service;
             mService = binder.getService();
-            Log.v("cdsteer", String.valueOf(mService.getRandomNumber()));
 //            mBound = true;
         }
 
@@ -319,7 +318,10 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public String[] splitString(String currentString){
-        String[] separated = currentString.split(":");
+        String[] separated = new String[0];
+        if (currentString != null) {
+            separated = currentString.split(":");
+        }
         return separated;
     }
 

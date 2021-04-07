@@ -60,8 +60,9 @@ public class BluetoothConect extends Service {
     List<BluetoothGattService> m_gattServices;
     BluetoothGattCharacteristic m_characteristicRead;
 
+    boolean mPVConnected = false;
+
     // Random number generator
-    private final Random mGenerator = new Random();
     private final IBinder binder = new LocalBinder();
     /**
      * Class used for the client Binder.  Because we know this service always
@@ -72,10 +73,6 @@ public class BluetoothConect extends Service {
             // Return this instance of LocalService so clients can call public methods
             return BluetoothConect.this;
         }
-    }
-    /** method for clients */
-    public int getRandomNumber() {
-        return mGenerator.nextInt(100);
     }
 
     public BluetoothConect() {
@@ -107,6 +104,7 @@ public class BluetoothConect extends Service {
             intent = new Intent("BLENewData");
             intent.putExtra("TXData", txData);
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+            mPVConnected = true;
         }
 
         //!Function to discover services
@@ -116,6 +114,7 @@ public class BluetoothConect extends Service {
             switch (newState) {
                 case BluetoothProfile.STATE_CONNECTED:
                     Log.v("cdsteer", String.valueOf("STATE_CONNECTED"));
+                    mPVConnected = true;
 //                    try {
 //                        getNewPVMessages();
 //                    } catch (IOException e) {
@@ -123,6 +122,10 @@ public class BluetoothConect extends Service {
 //                    }
                 case BluetoothProfile.STATE_DISCONNECTED:
                     Log.v("cdsteer", String.valueOf("STATE_DISCONNECTED"));
+                    mPVConnected = false;
+                    intent = new Intent("BLEConnection");
+                    intent.putExtra("Status", "PV Disconnected");
+                    LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
 //                    try {
 //                        postPVMessage();
 //                    } catch (IOException e) {
@@ -205,8 +208,6 @@ public class BluetoothConect extends Service {
         return true;
     }
 
-
-
     // Device scan callback.
     private ScanCallback leScanCallback =
             new ScanCallback() {
@@ -283,7 +284,7 @@ public class BluetoothConect extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // The service is starting, due to a call to startService()
-        scanLeDevice();
+        findBLE();
         return startMode;
     }
     @Override
@@ -309,8 +310,21 @@ public class BluetoothConect extends Service {
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
     }
 
-    private String[] splitString(String currentString){
-        String[] separated = currentString.split(":");
-        return separated;
+    // background thread that wakes up to check for device after a disconnecting
+    private void findBLE(){
+        new Thread(() -> {
+            while (true) {
+                while (!mPVConnected) {
+                    scanLeDevice();
+//                    Log.v("cdsteer", "check for PV");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
     }
+
 }
