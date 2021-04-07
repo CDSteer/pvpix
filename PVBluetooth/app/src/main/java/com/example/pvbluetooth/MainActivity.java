@@ -65,11 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
 
-    private Context context = this;
-
-    BluetoothGattCharacteristic m_characteristicTX;
     BluetoothConect mService;
-
+    boolean mBound;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -79,10 +76,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        //add button listener
         this.registerButtons();
         findViewById(R.id.send).setOnClickListener(sendClickListener);
-
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -136,8 +131,6 @@ public class MainActivity extends AppCompatActivity {
             builder.show();
         }
 
-
-
         Intent bleService = new Intent(this, BluetoothConect.class);
         startService(bleService);
         bindService(bleService, connection, Context.BIND_AUTO_CREATE);
@@ -148,11 +141,7 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mDataReceiver, new IntentFilter("BLENewData"));
 
-
-
     }
-
-
 
     private BroadcastReceiver mStatusReceiver = new BroadcastReceiver() {
         @Override
@@ -179,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className,
@@ -187,11 +175,11 @@ public class MainActivity extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothConect.LocalBinder binder = (BluetoothConect.LocalBinder) service;
             mService = binder.getService();
-//            mBound = true;
+            mBound = true;
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-//            mBound = false;
+            mBound = false;
         }
     };
 
@@ -219,9 +207,9 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-    
+
     //Function for writing to Arduino
-    private boolean writeVal(String text){
+    private void writeVal(String text){
         if(mService.m_characteristicTX != null) {
             mService.writeVal(text);
         } else {
@@ -240,9 +228,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("error", "no matching button");
                 }
             }
-            return false;
         }
-        return true;
     }
 
     private void setButtonState(Button btn, String value){
@@ -257,25 +243,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-////////////////////////////////////////////////////////////
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-//            scanLeDevice();
+            mService.scanLeDevice();
             return true;
         }
         if (id == R.id.write_value) {
@@ -283,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
 
     public void registerButtons(){
         register(R.id.one);
@@ -322,7 +299,6 @@ public class MainActivity extends AppCompatActivity {
 
     private View.OnClickListener sendClickListener = v -> {
         if (v.getId() == R.id.send){
-            TextView t=(TextView)findViewById(R.id.configText);
             try {
                 getNewPVMessages();
             } catch (IOException e) {
@@ -437,7 +413,6 @@ public class MainActivity extends AppCompatActivity {
         return System.currentTimeMillis()/1000;
     }
 
-    // background thread that wakes up to check for device after a disconnecting
     private void checkForPVMessages(){
         new Thread(() -> {
             while (true) {
@@ -456,7 +431,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }).start();
     }
-
 }
 
 
