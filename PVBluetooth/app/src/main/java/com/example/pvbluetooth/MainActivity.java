@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
             String message = intent.getStringExtra("Status");
             TextView t= findViewById(R.id.configText);
             t.setText(message);
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+//            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
             checkForPVMessages();
         }
     };
