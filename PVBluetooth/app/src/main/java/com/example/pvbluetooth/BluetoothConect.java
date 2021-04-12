@@ -54,7 +54,8 @@ public class BluetoothConect extends Service {
     Intent intent;
 
     private Context context = this;
-    private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
+//    private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
+    private static final String DEVICE_ADDRESS = "00:13:AA:00:6D:9A";
 
     BluetoothGattCharacteristic m_characteristicTX;
     List<BluetoothGattService> m_gattServices;

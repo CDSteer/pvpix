@@ -56,7 +56,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-    private String USERNAME = "Beth";
+//    private String USERNAME = "Beth";
+    private String USERNAME = "Phil";
     private String BASE_URL_GET = "https://pvpix.herokuapp.com/";
     private String BASE_URL_POST = "https://pvpix.herokuapp.com/post";
 
