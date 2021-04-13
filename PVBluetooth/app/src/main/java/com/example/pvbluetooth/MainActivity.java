@@ -141,6 +141,11 @@ public class MainActivity extends AppCompatActivity {
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mDataReceiver, new IntentFilter("BLENewData"));
+        try {
+            getNewPVMessages();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -203,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         try {
+            Log.v("cdsteer", "postPVMessage");
             postPVMessage();
         } catch (IOException e) {
             e.printStackTrace();
@@ -211,24 +217,26 @@ public class MainActivity extends AppCompatActivity {
 
     //Function for writing to Arduino
     private void writeVal(String text){
+        Log.v("cdsteer", text);
         if(mService.m_characteristicTX != null) {
-            mService.writeVal(text);
-        } else {
-            String[] titles = splitString(text);
-            for (int i=0; i<titles.length-1; i++) {
-                switch (i) {
-                    case 0: setButtonState(findViewById(R.id.one),titles[i]);
-                        break;
-                    case 1: setButtonState(findViewById(R.id.two),titles[i]);
-                        break;
-                    case 2: setButtonState(findViewById(R.id.three),titles[i]);
-                        break;
-                    case 3: setButtonState(findViewById(R.id.four), titles[i]);
-                        break;
-                    default:
-                        Log.e("error", "no matching button");
-                }
+            mService.writeVal(text+";");
+        }
+
+        String[] titles = splitString(text);
+        for (int i=0; i<titles.length-1; i++) {
+            switch (i) {
+                case 0: setButtonState(findViewById(R.id.one),titles[i]);
+                    break;
+                case 1: setButtonState(findViewById(R.id.two),titles[i]);
+                    break;
+                case 2: setButtonState(findViewById(R.id.three),titles[i]);
+                    break;
+                case 3: setButtonState(findViewById(R.id.four), titles[i]);
+                    break;
+                default:
+                    Log.e("error", "no matching button");
             }
+
         }
     }
 
@@ -321,7 +329,7 @@ public class MainActivity extends AppCompatActivity {
     public void getNewPVMessages() throws IOException {
         OkHttpClient client = new OkHttpClient();
         RequestBody formBody = new FormBody.Builder()
-                .add("lastTime", String.valueOf(recover()))
+                .add("lastTime", "0")
                 .add("user", USERNAME)
                 .build();
 
@@ -345,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
                 store(getTimestamp());
                 try {
                     JSONArray pvMessages = new JSONArray(mMessage);
-//                    Log.v("cdsteer", pvMessages.toString());
+                    Log.v("cdsteer", pvMessages.toString());
                     String[] newPvMessages =  new String[pvMessages.length()];
                     for(int i=0; i<pvMessages.length(); i++){
                         newPvMessages[i] = String.valueOf(pvMessages.getJSONObject(i).get("pv"));
@@ -359,9 +367,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playBack(String[] newPvMessages) {
-        for(int i=0; i<newPvMessages.length; i++){
-            writeVal(newPvMessages[i]);
-        }
+//        for(int i=0; i<newPvMessages.length; i++){
+            writeVal(newPvMessages[newPvMessages.length-1]);
+//        }
     }
 
     public void postPVMessage() throws IOException {
@@ -418,11 +426,11 @@ public class MainActivity extends AppCompatActivity {
         new Thread(() -> {
             while (true) {
                 while (mService.ismPVConnected()) {
-                    try {
-                        getNewPVMessages();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+//                    try {
+//                        //getNewPVMessages();
+//                    } catch (IOException e) {
+//                        //e.printStackTrace();
+//                    }
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
