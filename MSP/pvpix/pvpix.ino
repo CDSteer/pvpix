@@ -124,8 +124,8 @@ void setup()
 int* states;
 void loop() {
 
+   // read in a new pv message
    Serial1.begin(9600);  
-//
    digitalWrite(P8_1, HIGH); //Power to BLE
    if (Serial1.available() > 0) {
       String data_received = Serial1.readStringUntil(';');
@@ -134,11 +134,7 @@ void loop() {
     }
 
    delay(700);
-//   Serial1.println("0:0");
-   
-
-   delay(100);
-   
+//   Serial1.println("0:0");   
 
    if(sw0 == 1){
       digitalWrite(P4_3, HIGH); //Power to SERVO_0
