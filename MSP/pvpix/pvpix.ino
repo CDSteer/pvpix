@@ -11,11 +11,22 @@ int sw0, sw1, sw2, sw3 = 0;
 
 bool readMode = false;
 
+bool ble = true;
+int loopCount = 0;
+
+int writeToBLE(String mesg){
+  delay(100);                                         //Oberve Vdd0, Vdd1 etc with oscilloscope. Increase delay accordingly.
+  Serial1.println(mesg);
+  delay(100);
+  Serial.println("mesg sent");
+}
+
 int* splitCommand(String text, char splitChar) {
   int sa[4], r=0, t=0;
   String oneLine = text;
   Serial.println(oneLine);
-  if (oneLine.length()>1){
+  if (oneLine.length()>4){
+    loopCount = 0;
     Serial.print("Incoming States: ");
     for (int i=0; i < oneLine.length(); i++) { 
       if(oneLine.charAt(i) == ':') {
@@ -24,16 +35,25 @@ int* splitCommand(String text, char splitChar) {
         r=(i+1); 
         t++;
       }
-    }
-    if (sizeof(sa) > 1) {
-      sw0 =  1;
-      open_close0 = sa[0];
-      sw1 = 1;
-      open_close1 = sa[1];
-      sw2 = 1;
-      open_close2 = sa[2];
-      sw3 = 1;
-      open_close3 = sa[3];
+      if (open_close0 != sa[0]){
+        sw0 =  1;
+        open_close0 = sa[0];
+      }
+      
+      if (open_close1 != sa[1]) {
+        sw1 = 1;
+        open_close1 = sa[1];
+      }
+      
+      if (open_close2 != sa[2]) {
+        sw2 = 1;
+        open_close2 = sa[2];
+      }
+      
+      if (open_close3 != sa[3]) {
+        sw3 = 1;
+        open_close3 = sa[3];
+      }
     }
   }
   
@@ -129,55 +149,60 @@ void setup()
 }
 
 int* states;
+String sendMesg = "";
 void loop() {
    // read in a new pv message
    Serial1.begin(9600);  
-   digitalWrite(P8_1, HIGH); //Power to BLE
+   Serial.println(loopCount);
    
-   if (Serial1.available() > 0) {
-      String data_received = Serial1.readStringUntil(';');
-      Serial.println(data_received);
-      if (data_received) {
-        states = splitCommand(data_received, ';'); 
-      }     
+   loopCount++;
+  
+    if (loopCount>20) {
+      digitalWrite(P8_1, LOW); //Remove power to BLE
+      sendMesg = "";
+      suspend();
+    } else {
+      digitalWrite(P8_1, HIGH); //Power to BLE
+      writeToBLE(sendMesg);
+      if (Serial1.available() > 0) {
+        String data_received = Serial1.readStringUntil(';');
+        Serial.println(data_received);
+        if (data_received) {
+          states = splitCommand(data_received, ';'); 
+        }     
+      }
     }
-
-   delay(700);
-//   Serial1.println("0:0");   
-   if (readMode) Serial.println("in readMode");
+  
+   delay(900);
 
    if(sw0 == 1){
+      loopCount = 0;
       digitalWrite(P4_3, HIGH); //Power to SERVO_0
       delay(100);
       digitalWrite(P8_1, HIGH); //Power to BLE
       delay(700);                                         //Oberve Vdd0, Vdd1 etc with oscilloscope. Increase delay accordingly.
       myservo0.attach(P2_5);
-      delay(300);
-     
+      delay(300); 
       if(open_close0 == 1){
-        
         if (!readMode) {
-          Serial.println("0:0");
-          Serial1.println("0:0");
-          Serial.println("rotate: 0");
+          sendMesg = "0:0";
           delay(100);
           myservo0.write(90);
           delay(500);
         } else {
-          Serial.println("0:1");
+          sendMesg = "0:1";
           delay(100);
           myservo0.write(0);
           delay(500);
         }
       } else {
         if (!readMode) {
-          Serial.println("0:1");
-          Serial1.println("0:1");
+          sendMesg = "0:1";
           delay(100);
           myservo0.write(0);
           delay(500);
         } else {
-          Serial.println("0:0");
+          sendMesg = "0:0";
           delay(100);
           myservo0.write(90);
           delay(500);
@@ -187,38 +212,42 @@ void loop() {
       sw0 = 0;
     }
    if(sw1 == 1){
+    loopCount = 0;
       digitalWrite(P4_0, HIGH); //Power to SERVO_1
       delay(100);
-      digitalWrite(P8_1, HIGH); //Power to BLE
+//      digitalWrite(P8_1, HIGH); //Power to BLE
       delay(700);
       myservo1.attach(P2_4);
       delay(300);
      
       if(open_close1 == 1){    
         if (!readMode) {
-          Serial.println("1:0");
-          Serial1.println("1:0");
+          
+//          Serial1.println("1:0");
           delay(100);
           myservo1.write(90);
           delay(500);
+          sendMesg = "1:0";
         } else {
-          Serial.println("1:1");
+//          Serial.println("1:1");
           delay(100);
           myservo1.write(0);
           delay(500);
+          sendMesg = "1:1";
         }
       } else {
         if (!readMode) {
-          Serial.println("1:1");
-          Serial1.println("1:1");
+//          Serial1.println("1:1");
           delay(100);
           myservo1.write(0);
           delay(500);
+          sendMesg = "1:1";
         } else {
-          Serial.println("1:0");
+//          Serial.println("1:0");
           delay(100);
           myservo1.write(90);
           delay(500);
+          sendMesg = "1:0";
         }
       }
       delay(100);
@@ -226,6 +255,7 @@ void loop() {
 
     }
    if(sw2 == 1){
+    loopCount = 0;
       digitalWrite(P3_7, HIGH); //Power to SERVO_2
       delay(100);
       digitalWrite(P8_1, HIGH); //Power to BLE
@@ -234,26 +264,22 @@ void loop() {
       delay(300);
       if(open_close2 == 1){    
         if (!readMode) {
-          Serial.println("2:0");
-          Serial1.println("2:0");
+          sendMesg ="2:0";
           delay(100);
           myservo2.write(90);
           delay(500);
         } else {
-          Serial.println("2:1");
           delay(100);
           myservo2.write(0);
           delay(500);
         }
       } else {
         if (!readMode) {
-          Serial.println("2:1");
-          Serial1.println("2:1");
+          sendMesg = "2:1";
           delay(100);
           myservo2.write(0);
           delay(500);
         } else {
-          Serial.println("2:0");
           delay(100);
           myservo2.write(90);
           delay(500);
@@ -263,6 +289,7 @@ void loop() {
       sw2 = 0;
     }
      if(sw3 == 1){
+      loopCount = 0;
       digitalWrite(P8_2, HIGH); //Power to SERVO_3
       delay(100);
       digitalWrite(P8_1, HIGH); //Power to BLE
@@ -272,26 +299,22 @@ void loop() {
       
       if(open_close3 == 1){    
         if (!readMode) {
-          Serial.println("3:0");
-          Serial1.println("3:0");
+          sendMesg = "3:0";
           delay(100);
           myservo3.write(90);
           delay(500);
         } else {
-          Serial.println("3:1");
           delay(100);
           myservo3.write(0);
           delay(500);
         }
       } else {
         if (!readMode) {
-          Serial.println("3:1");
-          Serial1.println("3:1");
+          sendMesg = "3:1";
           delay(100);
           myservo3.write(0);
           delay(500);
         } else {
-          Serial.println("3:0");
           delay(100);
           myservo3.write(90);
           delay(500);
@@ -309,7 +332,7 @@ void loop() {
   myservo2.detach();
   myservo3.detach();
      
-//  digitalWrite(P8_1, LOW); //Remove power to BLE
+
 
  
   pinMode(P2_5, OUTPUT); //Servo PWM pin to output
@@ -329,9 +352,6 @@ void loop() {
   delay(30);
   
   readMode = false;
-  
-//  suspend();
-
 }
 
  //******************* ISR *******************//

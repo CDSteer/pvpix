@@ -54,8 +54,8 @@ public class BluetoothConect extends Service {
     Intent intent;
 
     private Context context = this;
-//    private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
-    private static final String DEVICE_ADDRESS = "00:13:AA:00:6D:9A";
+    private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
+//    private static final String DEVICE_ADDRESS = "00:13:AA:00:6D:9A";
 
     BluetoothGattCharacteristic m_characteristicTX;
     List<BluetoothGattService> m_gattServices;
@@ -321,9 +321,9 @@ public class BluetoothConect extends Service {
             while (true) {
                 while (!mPVConnected) {
                     scanLeDevice();
-//                    Log.v("cdsteer", "check for PV");
+                    Log.v("cdsteer", "check for PV");
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

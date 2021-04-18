@@ -56,8 +56,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-//    private String USERNAME = "Beth";
-    private String USERNAME = "Phil";
+    private String USERNAME = "Beth";
+//    private String USERNAME = "Phil";
     private String BASE_URL_GET = "https://pvpix.herokuapp.com/";
     private String BASE_URL_POST = "https://pvpix.herokuapp.com/post";
 
@@ -158,6 +158,11 @@ public class MainActivity extends AppCompatActivity {
             t.setText(message);
 //            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
             checkForPVMessages();
+            try {
+                getNewPVMessages();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -192,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         unbindService(connection);
+        mService.onDestroy();
     }
 
     private void setPvPixConfig(String[] pvPixConfig) {
