@@ -6,7 +6,7 @@ Servo myservo2;
 Servo myservo3;
          
 
-int open_close0, open_close1, open_close2, open_close3 = 0;
+int open_close0, open_close1, open_close2, open_close3, wakeBtn = 0;
 int sw0, sw1, sw2, sw3 = 0;
 
 bool readMode = false;
@@ -18,7 +18,6 @@ int writeToBLE(String mesg){
   delay(100);                                         //Oberve Vdd0, Vdd1 etc with oscilloscope. Increase delay accordingly.
   Serial1.println(mesg);
   delay(100);
-  Serial.println("mesg sent");
 }
 
 int* splitCommand(String text, char splitChar) {
@@ -100,6 +99,8 @@ void setup()
   pinMode(P2_6, INPUT_PULLUP); //SW2
   pinMode(P2_3, INPUT_PULLUP); //SW3
 
+  pinMode(P2_1, INPUT_PULLUP); //wakeBtn
+
  
   myservo0.attach(P2_5); //Sig_0
   myservo1.attach(P2_4); //Sig_0
@@ -111,6 +112,8 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(P2_0), toggle1, FALLING);
   attachInterrupt(digitalPinToInterrupt(P2_6), toggle2, FALLING);
   attachInterrupt(digitalPinToInterrupt(P2_3), toggle3, FALLING);
+
+  attachInterrupt(digitalPinToInterrupt(P2_1), toggleRst, FALLING);
 
   //Initialising
   Serial1.println("I'M ALIVE!");
@@ -160,6 +163,7 @@ void loop() {
     if (loopCount>20) {
       digitalWrite(P8_1, LOW); //Remove power to BLE
       sendMesg = "";
+      wakeBtn = 0;
       suspend();
     } else {
       digitalWrite(P8_1, HIGH); //Power to BLE
@@ -288,7 +292,7 @@ void loop() {
       delay(1000);
       sw2 = 0;
     }
-     if(sw3 == 1){
+    if(sw3 == 1){
       loopCount = 0;
       digitalWrite(P8_2, HIGH); //Power to SERVO_3
       delay(100);
@@ -323,7 +327,6 @@ void loop() {
       delay(100);
       sw3 = 0;
     }
-
      
   delay(30);
 
@@ -378,4 +381,10 @@ void toggle3(){
   wakeup();
   open_close3 = !open_close3;
   sw3 = 1;
+}
+
+void toggleRst(){
+  wakeup();
+  loopCount = 0;
+  wakeBtn = 1;
 }
