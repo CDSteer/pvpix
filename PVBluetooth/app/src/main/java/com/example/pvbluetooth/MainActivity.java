@@ -58,8 +58,8 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
     private String USERNAME = "Beth";
 //    private String USERNAME = "Phil";
-    private String BASE_URL_GET = "https://pvpix.herokuapp.com/";
-    private String BASE_URL_POST = "https://pvpix.herokuapp.com/post";
+    private String BASE_URL_GET = "https://pvpix.herokuapp.com/getCurrentPV";
+    private String BASE_URL_POST = "https://pvpix.herokuapp.com/db";
 
     BluetoothAdapter bluetoothAdapter;
 
@@ -175,6 +175,11 @@ public class MainActivity extends AppCompatActivity {
             if (pvPixConfig.length == 2) {
                 setPvPixConfig(pvPixConfig);
             }
+//            try {
+//                getNewPVMessages();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
 
         }
     };
@@ -223,9 +228,9 @@ public class MainActivity extends AppCompatActivity {
 
     //Function for writing to Arduino
     private void writeVal(String text){
-        Log.v("cdsteer", text);
+        Log.v("cdsteer", "writeVal: " + text);
         if(mService.m_characteristicTX != null) {
-            mService.writeVal(text+";");
+            mService.writeVal(text);
         }
 
         String[] titles = splitString(text);
@@ -334,6 +339,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void getNewPVMessages() throws IOException {
         OkHttpClient client = new OkHttpClient();
+
+
         RequestBody formBody = new FormBody.Builder()
                 .add("lastTime", "0")
                 .add("user", USERNAME)
@@ -341,7 +348,6 @@ public class MainActivity extends AppCompatActivity {
 
         Request request = new Request.Builder()
                 .url(BASE_URL_GET)
-                .post(formBody)
                 .header("Accept", "application/json")
                 .header("Content-Type", "application/json")
                 .build();
@@ -365,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
                         newPvMessages[i] = String.valueOf(pvMessages.getJSONObject(i).get("pv"));
                     }
                     playBack(newPvMessages);
+//                    writeVal(newPvMessages);
                 } catch (JSONException e) {
                     Log.e("cdsteer", "Failed to convet JSON" );
                 }
@@ -383,7 +390,7 @@ public class MainActivity extends AppCompatActivity {
         RequestBody formBody = new FormBody.Builder()
                 .add("time", String.valueOf(getTimestamp()))
                 .add("pv", getButtonStates())
-                .add("user", USERNAME)
+                .add("sender", USERNAME)
                 .build();
 
         Request request = new Request.Builder()
@@ -433,9 +440,9 @@ public class MainActivity extends AppCompatActivity {
             while (true) {
                 while (mService.ismPVConnected()) {
 //                    try {
-//                        //getNewPVMessages();
+//                        getNewPVMessages();
 //                    } catch (IOException e) {
-//                        //e.printStackTrace();
+//                        e.printStackTrace();
 //                    }
                     try {
                         Thread.sleep(1000);

@@ -57,6 +57,7 @@ public class BluetoothConect extends Service {
     private static final String DEVICE_ADDRESS = "B4:52:A9:12:A6:AA";
 //    private static final String DEVICE_ADDRESS = "00:13:AA:00:6D:9A";
 
+
     BluetoothGattCharacteristic m_characteristicTX;
     List<BluetoothGattService> m_gattServices;
     BluetoothGattCharacteristic m_characteristicRead;
@@ -105,7 +106,7 @@ public class BluetoothConect extends Service {
                                             BluetoothGattCharacteristic characteristic) {
             byte[] rawData = characteristic.getValue();
             String txData = new String(rawData).trim(); // toString does not work, but new String()
-            Log.i("cdsteer", "MSP Data = " + txData);
+//            Log.i("cdsteer", "MSP Data = " + txData);
             intent = new Intent("BLENewData");
             intent.putExtra("TXData", txData);
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
@@ -289,6 +290,7 @@ public class BluetoothConect extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // The service is starting, due to a call to startService()
+        Log.v("cdsteer",DEVICE_ADDRESS);
         findBLE();
         return startMode;
     }

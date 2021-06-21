@@ -156,7 +156,7 @@ String sendMesg = "";
 void loop() {
    // read in a new pv message
    Serial1.begin(9600);  
-   Serial.println(loopCount);
+//   Serial.println(loopCount);
    
    loopCount++;
   
@@ -170,6 +170,7 @@ void loop() {
       writeToBLE(sendMesg);
       if (Serial1.available() > 0) {
         String data_received = Serial1.readStringUntil(';');
+        Serial.print("datsa");
         Serial.println(data_received);
         if (data_received) {
           states = splitCommand(data_received, ';'); 
@@ -189,24 +190,24 @@ void loop() {
       delay(300); 
       if(open_close0 == 1){
         if (!readMode) {
-          sendMesg = "0:0";
+          sendMesg = "1:0";
           delay(100);
           myservo0.write(90);
           delay(500);
         } else {
-          sendMesg = "0:1";
+          sendMesg = "1:1";
           delay(100);
           myservo0.write(0);
           delay(500);
         }
       } else {
         if (!readMode) {
-          sendMesg = "0:1";
+          sendMesg = "1:1";
           delay(100);
           myservo0.write(0);
           delay(500);
         } else {
-          sendMesg = "0:0";
+          sendMesg = "1:0";
           delay(100);
           myservo0.write(90);
           delay(500);
@@ -231,13 +232,13 @@ void loop() {
           delay(100);
           myservo1.write(90);
           delay(500);
-          sendMesg = "1:0";
+          sendMesg = "0:0";
         } else {
 //          Serial.println("1:1");
           delay(100);
           myservo1.write(0);
           delay(500);
-          sendMesg = "1:1";
+          sendMesg = "0:1";
         }
       } else {
         if (!readMode) {
@@ -245,13 +246,13 @@ void loop() {
           delay(100);
           myservo1.write(0);
           delay(500);
-          sendMesg = "1:1";
+          sendMesg = "0:1";
         } else {
 //          Serial.println("1:0");
           delay(100);
           myservo1.write(90);
           delay(500);
-          sendMesg = "1:0";
+          sendMesg = "0:0";
         }
       }
       delay(100);
@@ -268,7 +269,7 @@ void loop() {
       delay(300);
       if(open_close2 == 1){    
         if (!readMode) {
-          sendMesg ="2:0";
+          sendMesg ="3:0";
           delay(100);
           myservo2.write(90);
           delay(500);
@@ -279,7 +280,7 @@ void loop() {
         }
       } else {
         if (!readMode) {
-          sendMesg = "2:1";
+          sendMesg = "3:1";
           delay(100);
           myservo2.write(0);
           delay(500);
@@ -303,7 +304,7 @@ void loop() {
       
       if(open_close3 == 1){    
         if (!readMode) {
-          sendMesg = "3:0";
+          sendMesg = "2:0";
           delay(100);
           myservo3.write(90);
           delay(500);
@@ -314,7 +315,7 @@ void loop() {
         }
       } else {
         if (!readMode) {
-          sendMesg = "3:1";
+          sendMesg = "2:1";
           delay(100);
           myservo3.write(0);
           delay(500);
